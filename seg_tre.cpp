@@ -8,6 +8,7 @@ const int INF = 1e9;
 struct node {
     int l, r;
     int max_val;
+    int push_val = 0;
     node * left_son = nullptr;
     node * right_son = nullptr;
 };
@@ -94,8 +95,7 @@ ostream & operator<< (ostream & out, const vector<int> & v) {
 }
 
 
-void   change_seg_vec(vector<int> & seg_tree, vector<int> & push_seg_tree, int l_cur, int r_cur, int pos_l, int pos_r, int add_val, int i = 0) {
-    
+void   change_seg_vec(vector<int> & seg_tree, vector<int> & push_seg_tree, int l_cur, int r_cur, int pos_l, int pos_r, int add_val, int i = 0) {  
     if (pos_r <= l_cur || pos_l >= r_cur) {
         return;
     }
@@ -109,6 +109,36 @@ void   change_seg_vec(vector<int> & seg_tree, vector<int> & push_seg_tree, int l
                           seg_tree[2 * i + 2] + push_seg_tree[2 * i + 2]);
     }
 }
+
+
+void relax(vector<int> & seg_tree, vector<int> & push_seg_tree, int  l, int r, int i) {
+    if (push_seg_tree[i] == 0) {
+        return;
+    }
+
+    seg_tree[i] += push_seg_tree[i];
+    if  (r - l > 1) {
+        push_seg_tree[2 * i + 1] += push_seg_tree[i];
+        push_seg_tree[2 * i + 2] += push_seg_tree[i];
+    }
+
+    push_seg_tree[i] = 0;
+}
+
+
+int  get_max_vec_upd(vector<int> & seg_tree, vector<int> & push_seg_tree, int l_cur, int r_cur, int l_q, int r_q, int i = 0) {
+    relax(seg_tree, push_seg_tree, l_cur, r_cur, i);
+    if (r_q <= l_cur || l_q >= r_cur) {
+        return -INF;
+    } else if(r_q >= r_cur && l_q <= l_cur) {
+        return seg_tree[i];
+    }
+    int  m = (l_cur + r_cur) / 2;
+    return max(get_max_vec_upd(seg_tree, push_seg_tree, l_cur, m, l_q, r_q, 2 * i + 1),
+                get_max_vec_upd(seg_tree, push_seg_tree, m, r_cur, l_q, r_q, 2 * i + 2));
+}
+
+
 
 
 int main() {
@@ -132,6 +162,8 @@ int main() {
     for (int i = 0; i < m; ++i) {
         int l, r;
         cin >> l >> r;
-        cout << get_max(root, l, r) << ' ' << get_max_vec(seg_tree, 0, v.size(), l, r) << '\n';
+        cout << get_max_vec_upd(seg_tree, seg_tree_push, 0, v.size(), l, r) << '\n';
+        cout << seg_tree << endl;
+        cout << seg_tree_push << endl;
     }
 }
